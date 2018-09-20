@@ -38,11 +38,8 @@ class Sms extends Component
     }
 
     public function send($phone, $text) {
-
-        try {
-            $phone = static::normalizePhone($phone);
-        } catch (\Exception $e) {
-            trigger_error("Failed normalize phone $phone");
+        if (!$this->validatePhone($phone)) {
+            trigger_error("Phone $phone in not valid");
             return false;
         }
 
@@ -56,14 +53,11 @@ class Sms extends Component
         return $this->sendToGateway($phone, $text);
     }
 
-    public static function normalizePhone($phone) {
-        $phone_numbers = preg_replace('/[^0-9]/', '', $phone);
-        if (preg_match('#^(?<country>\d)?(?<code>\d{3})(?<n1>\d{3})(?<n2>\d{2})(?<n3>\d{2})$#', $phone_numbers, $matches)) {
-            extract($matches);
-            if ($country == 8 || !$country) $country = 7;
-            $phone = "{$country}{$code}{$n1}{$n2}{$n3}";
-        } else {
-            throw new \Exception("Phone is invalid");
+    public function validatePhone($phone) {
+        $maxDigits = 15; // E.164: max 15 цифр номер телефона
+        $minDigits = 8; //  на самом деле непонятно, какая минимальная длина телефонного номера, пусть будет 8
+        if (preg_match("/^\+[0-9]\{$minDigits,$maxDigits\}$/", $phone)) {
+            return true;
         }
 
         return $phone;
